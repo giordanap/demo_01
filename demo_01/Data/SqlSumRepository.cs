@@ -15,8 +15,8 @@ namespace demo_01.Data
 
         public async Task<SumResponse> SaveSumAsync(int numeroA, int numeroB, CancellationToken ct = default)
         {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("dbo.SaveSum", conn)
+            await using var conn = new SqlConnection(_connectionString);
+            await using var cmd = new SqlCommand("dbo.SaveSum", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
@@ -24,26 +24,32 @@ namespace demo_01.Data
             cmd.Parameters.Add(new SqlParameter("@numeroA", SqlDbType.Int) { Value = numeroA });
             cmd.Parameters.Add(new SqlParameter("@numeroB", SqlDbType.Int) { Value = numeroB });
 
+            // Outputs alineados al SP
             var pResult = new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.Output };
-            var pNewId = new SqlParameter("@NewId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var pNewId = new SqlParameter("@NewId", SqlDbType.UniqueIdentifier) { Direction = ParameterDirection.Output };
             var pCreatedAt = new SqlParameter("@CreatedAt", SqlDbType.DateTime2) { Direction = ParameterDirection.Output };
 
             cmd.Parameters.Add(pResult);
             cmd.Parameters.Add(pNewId);
             cmd.Parameters.Add(pCreatedAt);
 
-            await conn.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+            var newId = (Guid)pNewId.Value;
+            var createdAt = (DateTime)pCreatedAt.Value;
+            var result = (int)pResult.Value;
 
             return new SumResponse
             {
+                Id = newId.ToString(),
                 numeroA = numeroA,
                 numeroB = numeroB,
-                Result = (int)pResult.Value,
-                Id = (string)pNewId.Value,
-                CreatedAt = (DateTime)pCreatedAt.Value
+                Result = result,
+                CreatedAt = createdAt
             };
         }
+
 
         public async Task<SumResponse?> GetByIdAsync(string id, CancellationToken ct = default)
         {

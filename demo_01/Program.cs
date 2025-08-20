@@ -1,9 +1,10 @@
 using demo_01.Data;
 using demo_01.Data.Mongo;
 using demo_01.Services;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
 
 
 
@@ -30,7 +31,8 @@ builder.Services
             ValidIssuer = jwt["Issuer"],
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-            RoleClaimType = "role"
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = "sub"
         };
     });
 

@@ -12,6 +12,28 @@ namespace demo_01.Services
             _repository = repository;
             _logger = logger;
         }
+
+        public async Task<SumResponse> GetById(string id, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Id must not be null or empty.", nameof(id));
+
+            ct.ThrowIfCancellationRequested();
+
+            using var _ = _logger.BeginScope(new { id });
+            _logger.LogDebug("Fetching sum by id...");
+
+            var result = await _repository.GetByIdAsync(id, ct).ConfigureAwait(false);
+            if (result is null)
+            {
+                _logger.LogWarning("Sum not found for id {Id}", id);
+                throw new KeyNotFoundException($"Sum with id '{id}' was not found.");
+            }
+
+            _logger.LogInformation("Sum retrieved for id {Id}", id);
+            return result;
+        }
+
         public Task<SumResponse> SumAndPersistAsync(SumRequest request, CancellationToken ct = default)
         {
             try

@@ -17,6 +17,7 @@ namespace demo_01.Controllers
             _configuration = configuration;
         }
 
+        [HttpPost("token")]
         public ActionResult<TokenResponse> Token([FromBody] LoginRequest request)
         {
             var issuer = _configuration["Jwt:Issuer"];
