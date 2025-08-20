@@ -47,16 +47,15 @@ namespace demo_01.Data
 
         public async Task<SumResponse?> GetByIdAsync(string id, CancellationToken ct = default)
         {
-            if (!int.TryParse(id, out var intId))
+            if (!Guid.TryParse(id, out var guid))
                 return null;
 
             using var conn = new SqlConnection(_connectionString);
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = """
-        SELECT TOP 1 Id, NumeroA, NumeroB, Result, CreatedAt
-        FROM dbo.Sums WHERE Id = @Id
-    """;
-            cmd.Parameters.Add(new SqlParameter("@Id", SqlDbType.Int) { Value = intId });
+            using var cmd = new SqlCommand("dbo.GetSumById", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.Add(new SqlParameter("@Id", SqlDbType.UniqueIdentifier) { Value = guid });
 
             await conn.OpenAsync(ct);
             using var rd = await cmd.ExecuteReaderAsync(ct);
@@ -64,13 +63,12 @@ namespace demo_01.Data
 
             return new SumResponse
             {
-                Id = rd.GetInt32(0),
+                Id = rd.GetGuid(0).ToString(),
                 numeroA = rd.GetInt32(1),
                 numeroB = rd.GetInt32(2),
                 Result = rd.GetInt32(3),
                 CreatedAt = rd.GetDateTime(4)
             };
         }
-
     }
 }
