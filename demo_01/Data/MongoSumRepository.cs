@@ -38,5 +38,20 @@ namespace demo_01.Data
                 CreatedAt = doc.CreatedAt
             };
         }
+
+        public async Task<SumResponse?> GetByIdAsync(string id, CancellationToken ct = default)
+        {
+            var doc = await _collection.Find(d => d.Id == id).FirstOrDefaultAsync(ct);
+            if (doc is null) return null;
+
+            return new SumResponse
+            {
+                Id = doc.Id,
+                numeroA = doc.NumeroA,
+                numeroB = doc.NumeroB,
+                Result = doc.Result,
+                CreatedAt = doc.CreatedAt
+            };
+        }
     }
 }
