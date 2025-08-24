@@ -1,7 +1,10 @@
+using demo_01.Application.Auth;
 using demo_01.Data;
 using demo_01.Data.Mongo;
+using demo_01.Domain.Users;
 using demo_01.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
@@ -44,6 +47,8 @@ builder.Services.AddAuthorization(opts =>
 
 
 builder.Services.AddScoped<ISumService, SumService>();
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<AuthService>();
 
 var provider = builder.Configuration["Persistence:Provider"]?.ToLowerInvariant() ?? "sql";
 if (provider == "mongo")
