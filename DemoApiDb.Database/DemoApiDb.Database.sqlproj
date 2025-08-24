@@ -66,5 +66,15 @@
     <Build Include="dbo\Tables\Sums.sql" />
     <Build Include="dbo\Stored Procedures\SaveSum.sql" />
     <Build Include="dbo\Stored Procedures\GetSumById.sql" />
+    <Build Include="dbo\Tables\Users.sql" />
+    <Build Include="dbo\Tables\UserRoles.sql" />
+    <Build Include="dbo\Tables\Roles.sql" />
+    <Build Include="dbo\Stored Procedures\UpdatePasswordHash.sql" />
+    <Build Include="dbo\Stored Procedures\SetUserActive.sql" />
+    <Build Include="dbo\Stored Procedures\GetUserRoles.sql" />
+    <Build Include="dbo\Stored Procedures\GetUserByUsername.sql" />
+    <Build Include="dbo\Stored Procedures\EnsureRole.sql" />
+    <Build Include="dbo\Stored Procedures\CreateUser.sql" />
+    <Build Include="dbo\Stored Procedures\AssignRoleToUser.sql" />
   </ItemGroup>
 </Project>

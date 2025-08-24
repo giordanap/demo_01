@@ -1,0 +1,7 @@
+﻿CREATE TABLE [dbo].[Roles] (
+    [Id]   UNIQUEIDENTIFIER CONSTRAINT [DF_Roles_Id] DEFAULT (newsequentialid()) NOT NULL,
+    [Name] NVARCHAR (100)   NOT NULL,
+    CONSTRAINT [PK_Roles] PRIMARY KEY CLUSTERED ([Id] ASC),
+    UNIQUE NONCLUSTERED ([Name] ASC)
+);
+
