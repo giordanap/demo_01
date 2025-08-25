@@ -1,15 +1,12 @@
-using demo_01.Application.Auth;
-using demo_01.Data;
-using demo_01.Data.Mongo;
-using demo_01.Domain.Users;
-using demo_01.Services;
+using System.Security.Claims;
+using System.Text;
+using Demo.Application.Auth;
+using Demo.Application.Sums;
+using Demo.Infrastructure;
+using Demo.Domain.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Text;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDbSettings"));
-
+// Auth: JWT
 var jwt = builder.Configuration.GetSection("Jwt");
 var keyBytes = Encoding.UTF8.GetBytes(jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key missing"));
 builder.Services
@@ -41,24 +36,17 @@ builder.Services
 
 builder.Services.AddAuthorization(opts =>
 {
-    opts.AddPolicy("CanReadSums", p => p.RequireRole("Reader"));
-    opts.AddPolicy("CanWriteSums", p => p.RequireRole("Writer"));
+    opts.AddPolicy("CanReadSums", p => p.RequireRole("Reader", "Writer", "Admin"));
+    opts.AddPolicy("CanWriteSums", p => p.RequireRole("Writer", "Admin"));
 });
 
-
-builder.Services.AddScoped<ISumService, SumService>();
+// Servicios de aplicación
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ISumService, SumService>();
 
-var provider = builder.Configuration["Persistence:Provider"]?.ToLowerInvariant() ?? "sql";
-if (provider == "mongo")
-{
-    builder.Services.AddScoped<ISumRepository, MongoSumRepository>();
-}
-else
-{
-    builder.Services.AddScoped<ISumRepository, SqlSumRepository>();
-}
+// Infrastructure (repos y contexto)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
@@ -67,12 +55,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

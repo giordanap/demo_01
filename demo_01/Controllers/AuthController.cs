@@ -1,40 +1,42 @@
-﻿using demo_01.Application.Auth;
+﻿using Demo.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace demo_01.Controllers
+namespace Demo.Api.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public sealed class AuthController : ControllerBase
 {
-    [ApiController]
-    [Route("api/auth")]
-    public sealed class AuthController : ControllerBase
+    private readonly AuthService _auth;
+    private readonly IConfiguration _cfg;
+    public AuthController(AuthService auth, IConfiguration cfg) { _auth = auth; _cfg = cfg; }
+
+    [HttpPost("token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Token([FromBody] LoginRequest req, CancellationToken ct)
     {
-        private readonly AuthService _auth;
-        public AuthController(AuthService auth) => _auth = auth;
-
-        [HttpPost("token")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Token([FromBody] LoginRequest req, CancellationToken ct)
-        {
-            var jwt = await _auth.IssueTokenAsync(req.Username, req.Password, ct);
-            return jwt is null ? Unauthorized() : Ok(new { access_token = jwt, token_type = "Bearer" });
-        }
-
-        // Solo admin puede crear usuarios (ajusta política/rol según tu gusto)
-        [HttpPost("register")]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest req, CancellationToken ct)
-        {
-            var id = await _auth.RegisterAsync(req.Username, req.Password, req.IsActive, req.Roles ?? Array.Empty<string>(), ct);
-            return CreatedAtAction(nameof(Register), new { id }, null);
-        }
+        var jwt = await _auth.IssueTokenAsync(req.Username, req.Password, ct);
+        return jwt is null ? Unauthorized() : Ok(new { access_token = jwt, token_type = "Bearer" });
     }
 
-    public sealed class RegisterRequest
+    [HttpPost("register")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest req, CancellationToken ct)
     {
-        public string Username { get; init; } = "";
-        public string Password { get; init; } = "";
-        public bool IsActive { get; init; } = true;
-        public string[]? Roles { get; init; }
+        var id = await _auth.RegisterAsync(req.Username, req.Password, req.IsActive, req.Roles ?? Array.Empty<string>(), ct);
+        return CreatedAtAction(nameof(Register), new { id }, null);
     }
 
+    // Bootstrap para crear el primer admin sin tocar la BD (habilítalo en appsettings/User Secrets)
+    [HttpPost("bootstrap-admin")]
+    [AllowAnonymous]
+    public async Task<IActionResult> BootstrapAdmin([FromBody] RegisterRequest req, CancellationToken ct)
+    {
+        if (!_cfg.GetValue<bool>("BootstrapAdmin:Enabled"))
+            return NotFound();
+
+        var id = await _auth.RegisterAsync(req.Username, req.Password, true, new[] { "Admin" }, ct);
+        return CreatedAtAction(nameof(BootstrapAdmin), new { id }, null);
+    }
 }

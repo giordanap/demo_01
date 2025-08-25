@@ -1,44 +1,30 @@
-﻿using Azure.Core;
-using demo_01.Models;
-using demo_01.Services;
+﻿using Demo.Application.Sums;
+using Demo.Domain.Sums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace demo_01.Controllers
+namespace Demo.Api.Controllers;
+
+[ApiController]
+[Route("api/hello")]
+public sealed class HelloController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class HelloController : ControllerBase
-    {
-        private readonly ISumService _service;
+    private readonly ISumService _service;
+    public HelloController(ISumService service) => _service = service;
 
-        public HelloController(ISumService service)
-        {
-            _service = service;
-        }
+    [HttpGet]
+    [AllowAnonymous]
+    public string Get() => "Hola desde Demo.Api";
 
-        // GET: /api/hello
-        [HttpGet]
-        public ActionResult<string> Get()
-        {
-            return Ok("Hola desde mi API .NET 8 con controllers 👋 2");
-        }
+    [HttpGet("{id}")]
+    [Authorize(Policy = "CanReadSums")]
+    public Task<SumEntry?> GetById([FromRoute] string id, CancellationToken ct)
+        => _service.GetAsync(id, ct);
 
-        [HttpGet("{id}")]
-        [Authorize(Policy = "CanReadSums")]
-        public async Task<ActionResult<SumResponse>> GetById(string id, CancellationToken ct)
-        {
-            var response = await _service.GetById(id, ct);
-            return Ok(response);
-        }
+    public sealed class SumRequest { public int NumeroA { get; init; } public int NumeroB { get; init; } }
 
-        // POST: /api/sum
-        [HttpPost]
-        [Authorize(Policy = "CanWriteSums")]
-        public async Task<ActionResult<SumResponse>> SumAndPersistAsync([FromBody] SumRequest request, CancellationToken ct)
-        {
-            var response = await _service.SumAndPersistAsync(request, ct);
-            return Ok(response);
-        }
-    }
+    [HttpPost]
+    [Authorize(Policy = "CanWriteSums")]
+    public Task<SumEntry> Create([FromBody] SumRequest req, CancellationToken ct)
+        => _service.CreateAsync(req.NumeroA, req.NumeroB, ct);
 }
